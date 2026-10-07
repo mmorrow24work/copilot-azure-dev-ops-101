@@ -1,0 +1,20 @@
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  pythonVersion: '3.11'
+  isMain: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
+
+steps:
+  - script: echo "Build reason is $(Build.Reason)"
+    displayName: Show non-secret context
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: $(pythonVersion)
+  - script: python -m pytest -q
+    displayName: Test every run
+  - script: echo "This step only runs for main"
+    displayName: Main-only step
+    condition: and(succeeded(), eq(variables.isMain, true))

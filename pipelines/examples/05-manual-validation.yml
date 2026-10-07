@@ -1,0 +1,34 @@
+trigger: none
+
+stages:
+  - stage: Build
+    jobs:
+      - job: BuildJob
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - script: echo "Build completed"
+
+  - stage: Approval
+    dependsOn: Build
+    jobs:
+      - job: WaitForApproval
+        pool: server
+        timeoutInMinutes: 4320
+        steps:
+          - task: ManualValidation@1
+            timeoutInMinutes: 1440
+            inputs:
+              notifyUsers: |
+                $(Build.RequestedForEmail)
+              instructions: Review validation evidence before approving the training deployment.
+              onTimeout: reject
+
+  - stage: Deploy
+    dependsOn: Approval
+    jobs:
+      - job: SimulatedDeploy
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - script: echo "Approved deployment"

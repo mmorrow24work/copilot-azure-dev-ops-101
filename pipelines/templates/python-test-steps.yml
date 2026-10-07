@@ -1,0 +1,30 @@
+parameters:
+  - name: pythonVersion
+    type: string
+    default: '3.11'
+  - name: requirementsFile
+    type: string
+    default: requirements-dev.txt
+  - name: testPath
+    type: string
+    default: tests
+
+steps:
+  - task: UsePythonVersion@0
+    displayName: Use Python ${{ parameters.pythonVersion }}
+    inputs:
+      versionSpec: ${{ parameters.pythonVersion }}
+
+  - script: python -m pip install -r ${{ parameters.requirementsFile }}
+    displayName: Install dependencies
+
+  - script: pytest -q ${{ parameters.testPath }} --junitxml=$(Common.TestResultsDirectory)/pytest.xml
+    displayName: Run pytest
+
+  - task: PublishTestResults@2
+    displayName: Publish test results
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFormat: JUnit
+      testResultsFiles: $(Common.TestResultsDirectory)/pytest.xml
+      failTaskOnFailedTests: true

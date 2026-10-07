@@ -1,0 +1,14 @@
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - checkout: self
+  - bash: |
+      set -euo pipefail
+      docker build --tag greeting:$(Build.BuildId) examples/week-09/app
+      docker image inspect greeting:$(Build.BuildId) > "$(Build.ArtifactStagingDirectory)/image-inspect.json"
+    displayName: Build container and capture metadata
+  - publish: $(Build.ArtifactStagingDirectory)
+    artifact: container-metadata

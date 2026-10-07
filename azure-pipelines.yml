@@ -1,0 +1,44 @@
+# CI runs after changes reach main. Pull-request validation for Azure Repos Git
+# must be configured as a build-validation branch policy on main.
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - docs/**
+      - curriculum/**
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  pythonVersion: '3.11'
+
+steps:
+  - checkout: self
+    clean: true
+    fetchDepth: 1
+
+  - task: UsePythonVersion@0
+    displayName: Use Python $(pythonVersion)
+    inputs:
+      versionSpec: $(pythonVersion)
+
+  - script: python -m pip install --upgrade pip
+    displayName: Upgrade pip
+
+  - script: python -m pip install -r requirements-dev.txt
+    displayName: Install development dependencies
+
+  - script: pytest -q --junitxml=$(Common.TestResultsDirectory)/pytest.xml
+    displayName: Run tests
+
+  - task: PublishTestResults@2
+    displayName: Publish pytest results
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFormat: JUnit
+      testResultsFiles: $(Common.TestResultsDirectory)/pytest.xml
+      failTaskOnFailedTests: true
+      testRunTitle: Python $(pythonVersion) tests
